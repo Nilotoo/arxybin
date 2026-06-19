@@ -10,7 +10,7 @@ AppVersion={#MyAppVersion}
 AppPublisher={#MyAppPublisher}
 DefaultDirName={commonpf}\arxybin
 DefaultGroupName=arxybin.
-OutputDir=.\release
+OutputDir=.\
 OutputBaseFilename=arxybin_v1.0.0_Setup
 WizardImageFile=.\pictures\install_preview.bmp
 WizardSmallImageFile=.\pictures\install_preview_small.bmp
@@ -32,11 +32,11 @@ Name: "presets"; Description: "Factory Presets (Documents\arxybin\Presets)"; Typ
 
 [Files]
 ; VST3
-Source: ".\release\arxybin_v1.0.0\arxybin..vst3\*"; DestDir: "{code:GetVST3Path}"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: vst3
+Source: "arxybin_v1.0.0\arxybin..vst3\*"; DestDir: "{code:GetVST3Path}"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: vst3
 ; Standalone
-Source: ".\release\arxybin_v1.0.0\arxybin..exe"; DestDir: "{code:GetStandalonePath}"; Flags: ignoreversion; Components: standalone
+Source: "arxybin_v1.0.0\arxybin..exe"; DestDir: "{code:GetStandalonePath}"; Flags: ignoreversion; Components: standalone
 ; Factory presets -> factory/
-Source: ".\release\arxybin_v1.0.0\*.arxybin"; DestDir: "{userdocs}\arxybin\Presets\factory"; Flags: ignoreversion; Components: presets
+Source: "arxybin_v1.0.0\*.arxybin"; DestDir: "{userdocs}\arxybin\Presets\factory"; Flags: ignoreversion; Components: presets
 
 [Icons]
 Name: "{group}\arxybin. (Standalone)"; Filename: "{code:GetStandalonePath}\arxybin..exe"; Components: standalone
