@@ -1,0 +1,25 @@
+# =============================================================================
+# arxybin. — Git ignore rules
+# =============================================================================
+
+# CMake build output (huge — never commit)
+build/
+
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Claude Code internal
+.claude/
+
+# Release packaging (installer binaries — too large, use GitHub Releases instead)
+release/innosetup.exe
+release/*.exe
+release/*.zip

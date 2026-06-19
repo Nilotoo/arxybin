@@ -1,0 +1,72 @@
+name: Build arxybin
+
+# Trigger: push to main, or manual trigger from GitHub web UI
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  # =========================================================================
+  # macOS build — VST3 + AudioUnit + Standalone
+  # =========================================================================
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Clone JUCE 8.0.13
+        run: |
+          git clone --depth 1 --branch 8.0.13 \
+            https://github.com/juce-framework/JUCE.git ~/JUCE
+
+      - name: Configure CMake
+        run: |
+          cmake -G Xcode -B build_mac
+
+      - name: Build Release
+        run: |
+          cmake --build build_mac --config Release
+
+      - name: Upload macOS build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: arxybin-macOS
+          path: |
+            build_mac/arxybin_artefacts/Release/VST3/arxybin..vst3
+            build_mac/arxybin_artefacts/Release/AU/arxybin..component
+            build_mac/arxybin_artefacts/Release/Standalone/arxybin..app
+
+  # =========================================================================
+  # Windows build — VST3 + Standalone
+  # =========================================================================
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Clone JUCE 8.0.13
+        shell: pwsh
+        run: |
+          git clone --depth 1 --branch 8.0.13 `
+            https://github.com/juce-framework/JUCE.git $env:USERPROFILE\JUCE
+
+      - name: Configure CMake
+        shell: pwsh
+        run: |
+          cmake -G "Visual Studio 17 2022" -A x64 -B build_win
+
+      - name: Build Release
+        shell: pwsh
+        run: |
+          cmake --build build_win --config Release
+
+      - name: Upload Windows build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: arxybin-Windows
+          path: |
+            build_win/arxybin_artefacts/Release/VST3/arxybin..vst3
+            build_win/arxybin_artefacts/Release/Standalone/arxybin..exe
