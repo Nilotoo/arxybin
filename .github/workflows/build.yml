@@ -29,6 +29,29 @@ jobs:
         run: |
           cmake --build build_mac --config Release
 
+      - name: Create macOS installer (.pkg)
+        run: |
+          # Create staging directories
+          mkdir -p pkg_root/Library/Audio/Plug-Ins/VST3
+          mkdir -p pkg_root/Library/Audio/Plug-Ins/Components
+          mkdir -p pkg_root/Applications
+
+          # Copy plugin files into staging
+          cp -R build_mac/arxybin_artefacts/Release/VST3/arxybin..vst3 \
+            pkg_root/Library/Audio/Plug-Ins/VST3/
+          cp -R build_mac/arxybin_artefacts/Release/AU/arxybin..component \
+            pkg_root/Library/Audio/Plug-Ins/Components/
+          cp -R build_mac/arxybin_artefacts/Release/Standalone/arxybin..app \
+            pkg_root/Applications/
+
+          # Build the installer package
+          pkgbuild \
+            --root pkg_root \
+            --identifier com.nilotoo.arxybin \
+            --version 1.0.0 \
+            --install-location / \
+            arxybin_v1.0.0_macOS.pkg
+
       - name: Upload macOS build artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -37,6 +60,7 @@ jobs:
             build_mac/arxybin_artefacts/Release/VST3/arxybin..vst3
             build_mac/arxybin_artefacts/Release/AU/arxybin..component
             build_mac/arxybin_artefacts/Release/Standalone/arxybin..app
+            arxybin_v1.0.0_macOS.pkg
 
   # =========================================================================
   # Windows build — VST3 + Standalone
