@@ -170,10 +170,9 @@ jobs:
 
       - name: Create Linux installer (.sh)
         run: |
-          mkdir -p pkg_linux
-          cp -R build_linux/arxybin_artefacts/Release/VST3/arxybin..vst3 pkg_linux/
-          cp build_linux/arxybin_artefacts/Release/Standalone/arxybin pkg_linux/
           mkdir -p pkg_linux/factory
+          cp -R build_linux/arxybin_artefacts/Release/VST3/arxybin..vst3 pkg_linux/
+          cp build_linux/arxybin_artefacts/Release/Standalone/arxybin pkg_linux/ 2>/dev/null || echo "Standalone skipped"
           cp presets/factory/*.arxybin pkg_linux/factory/
 
           # Create self-extracting install script
@@ -199,8 +198,11 @@ jobs:
           TMPDIR=$(mktemp -d)
           tail -n +__PAYLOAD__ "$0" | tar xz -C "$TMPDIR"
           cp -R "$TMPDIR/arxybin..vst3/"* "$DEST_VST3/"
-          cp "$TMPDIR/arxybin" "$DEST_BIN/"
-          chmod +x "$DEST_BIN/arxybin"
+          if [ -f "$TMPDIR/arxybin" ]; then
+            cp "$TMPDIR/arxybin" "$DEST_BIN/"
+            chmod +x "$DEST_BIN/arxybin"
+            echo "✓ Standalone installed to $DEST_BIN/arxybin"
+          fi
           cp "$TMPDIR/factory/"*.arxybin "$DEST_PRESETS/"
           rm -rf "$TMPDIR"
           echo "Done! Restart your DAW and look for 'arxybin.' in the plugin list."
