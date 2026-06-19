@@ -168,6 +168,47 @@ jobs:
         run: |
           cmake --build build_linux --config Release
 
+      - name: Create Linux installer (.sh)
+        run: |
+          mkdir -p pkg_linux
+          cp -R build_linux/arxybin_artefacts/Release/VST3/arxybin..vst3 pkg_linux/
+          cp build_linux/arxybin_artefacts/Release/Standalone/arxybin pkg_linux/
+          mkdir -p pkg_linux/factory
+          cp presets/factory/*.arxybin pkg_linux/factory/
+
+          # Create self-extracting install script
+          cat > arxybin_v1.0.0_Linux.sh << 'HEREDOC'
+          #!/bin/bash
+          set -e
+          echo "arxybin. v1.0.0 — Linux Installer"
+          echo "================================="
+          echo ""
+          if [ "$1" = "--system" ]; then
+            DEST_VST3="/usr/local/lib/vst3/arxybin..vst3"
+            DEST_BIN="/usr/local/bin"
+            DEST_PRESETS="/usr/local/share/arxybin/Presets"
+            echo "System-wide install (requires sudo)"
+          else
+            DEST_VST3="$HOME/.vst3/arxybin..vst3"
+            DEST_BIN="$HOME/.local/bin"
+            DEST_PRESETS="$HOME/Documents/arxybin/Presets"
+            echo "User install (prefix: --system for system-wide)"
+          fi
+          echo ""
+          mkdir -p "$DEST_VST3" "$DEST_BIN" "$DEST_PRESETS"
+          TMPDIR=$(mktemp -d)
+          tail -n +__PAYLOAD__ "$0" | tar xz -C "$TMPDIR"
+          cp -R "$TMPDIR/arxybin..vst3/"* "$DEST_VST3/"
+          cp "$TMPDIR/arxybin" "$DEST_BIN/"
+          chmod +x "$DEST_BIN/arxybin"
+          cp "$TMPDIR/factory/"*.arxybin "$DEST_PRESETS/"
+          rm -rf "$TMPDIR"
+          echo "Done! Restart your DAW and look for 'arxybin.' in the plugin list."
+          exit 0
+          __PAYLOAD__
+          (cd pkg_linux && tar czf - arxybin..vst3 arxybin factory) >> arxybin_v1.0.0_Linux.sh
+          chmod +x arxybin_v1.0.0_Linux.sh
+
       - name: Upload Linux build artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -175,3 +216,4 @@ jobs:
           path: |
             build_linux/arxybin_artefacts/Release/VST3/arxybin..vst3
             build_linux/arxybin_artefacts/Release/Standalone/arxybin
+            arxybin_v1.0.0_Linux.sh
