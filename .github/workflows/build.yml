@@ -36,13 +36,16 @@ jobs:
           mkdir -p pkg_root/Library/Audio/Plug-Ins/Components
           mkdir -p pkg_root/Applications
 
-          # Copy plugin files into staging
-          cp -R build_mac/arxybin_artefacts/Release/VST3/arxybin..vst3 \
-            pkg_root/Library/Audio/Plug-Ins/VST3/
-          cp -R build_mac/arxybin_artefacts/Release/AU/arxybin..component \
-            pkg_root/Library/Audio/Plug-Ins/Components/
-          cp -R build_mac/arxybin_artefacts/Release/Standalone/arxybin..app \
-            pkg_root/Applications/
+          # Copy plugin files into staging (skip if not built)
+          [ -d build_mac/arxybin_artefacts/Release/VST3/arxybin..vst3 ] && \
+            cp -R build_mac/arxybin_artefacts/Release/VST3/arxybin..vst3 \
+              pkg_root/Library/Audio/Plug-Ins/VST3/ || echo "VST3 not found, skipping"
+          [ -d build_mac/arxybin_artefacts/Release/AU/arxybin..component ] && \
+            cp -R build_mac/arxybin_artefacts/Release/AU/arxybin..component \
+              pkg_root/Library/Audio/Plug-Ins/Components/ || echo "AU not found, skipping"
+          [ -d build_mac/arxybin_artefacts/Release/Standalone/arxybin..app ] && \
+            cp -R build_mac/arxybin_artefacts/Release/Standalone/arxybin..app \
+              pkg_root/Applications/ || echo "Standalone not found, skipping"
 
           # Build the installer package
           pkgbuild \

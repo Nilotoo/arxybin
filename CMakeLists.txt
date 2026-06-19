@@ -32,6 +32,13 @@ message(STATUS "JUCE_PATH = ${JUCE_PATH}")
 add_subdirectory(${JUCE_PATH} ${CMAKE_BINARY_DIR}/JUCE)
 
 # --- Plugin target -------------------------------------------------------------
+# macOS also builds AudioUnit (AU) for Logic Pro etc.
+if(APPLE)
+    set(ARXYBIN_FORMATS VST3 Standalone AudioUnit)
+else()
+    set(ARXYBIN_FORMATS VST3 Standalone)
+endif()
+
 juce_add_plugin(arxybin
     # Plugin metadata
     PRODUCT_NAME             "arxybin."
@@ -40,8 +47,8 @@ juce_add_plugin(arxybin
     PLUGIN_CODE              ArXy
     VERSION                  1.0.0
 
-    # Plugin formats — macOS also builds AudioUnit (AU) for Logic Pro etc.
-    FORMATS                  VST3 Standalone $<$<PLATFORM_ID:Apple>:AudioUnit>
+    # Plugin formats
+    FORMATS                  ${ARXYBIN_FORMATS}
     VST3_CATEGORIES          "Fx|Delay" "Fx|Dynamics" "Fx"
 )
 
