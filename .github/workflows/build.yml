@@ -93,7 +93,7 @@ jobs:
       - name: Prepare installer staging
         shell: pwsh
         run: |
-          mkdir -p release\arxybin_v1.0.0\arxybin..vst3
+          New-Item -ItemType Directory -Force -Path release\arxybin_v1.0.0\arxybin..vst3 | Out-Null
           xcopy /E /Y build_win\arxybin_artefacts\Release\VST3\arxybin..vst3\* release\arxybin_v1.0.0\arxybin..vst3\
           copy /Y build_win\arxybin_artefacts\Release\Standalone\arxybin..exe release\arxybin_v1.0.0\
           copy /Y presets\factory\*.arxybin release\arxybin_v1.0.0\
@@ -159,7 +159,10 @@ jobs:
 
       - name: Configure CMake
         run: |
-          cmake -B build_linux -DCMAKE_BUILD_TYPE=Release
+          cmake -B build_linux -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_CXX_FLAGS="$(pkg-config --cflags gtk+-3.0)" \
+            -DCMAKE_EXE_LINKER_FLAGS="$(pkg-config --libs gtk+-3.0)" \
+            -DCMAKE_SHARED_LINKER_FLAGS="$(pkg-config --libs gtk+-3.0)"
 
       - name: Build Release
         run: |
