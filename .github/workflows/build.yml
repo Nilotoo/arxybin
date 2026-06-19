@@ -91,9 +91,9 @@ jobs:
           cmake --build build_win --config Release
 
       - name: Prepare installer staging
-        shell: pwsh
+        shell: cmd
         run: |
-          New-Item -ItemType Directory -Force -Path release\arxybin_v1.0.0\arxybin..vst3 | Out-Null
+          mkdir release\arxybin_v1.0.0\arxybin..vst3 2>nul
           xcopy /E /Y build_win\arxybin_artefacts\Release\VST3\arxybin..vst3\* release\arxybin_v1.0.0\arxybin..vst3\
           copy /Y build_win\arxybin_artefacts\Release\Standalone\arxybin..exe release\arxybin_v1.0.0\
           copy /Y presets\factory\*.arxybin release\arxybin_v1.0.0\
@@ -160,9 +160,9 @@ jobs:
       - name: Configure CMake
         run: |
           cmake -B build_linux -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_CXX_FLAGS="$(pkg-config --cflags gtk+-3.0)" \
-            -DCMAKE_EXE_LINKER_FLAGS="$(pkg-config --libs gtk+-3.0)" \
-            -DCMAKE_SHARED_LINKER_FLAGS="$(pkg-config --libs gtk+-3.0)"
+            -DCMAKE_CXX_FLAGS="$(pkg-config --cflags gtk+-3.0 webkit2gtk-4.1)" \
+            -DCMAKE_EXE_LINKER_FLAGS="$(pkg-config --libs gtk+-3.0 webkit2gtk-4.1)" \
+            -DCMAKE_SHARED_LINKER_FLAGS="$(pkg-config --libs gtk+-3.0 webkit2gtk-4.1)"
 
       - name: Build Release
         run: |
