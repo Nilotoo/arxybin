@@ -1,4 +1,4 @@
-# arxybin — 跨平台移植修改说明
+# arxybin — Linux 移植修改说明
 
 > 最后更新：2026-06-20
 > 当前版本：v1.0.0（支持 Windows x64 + macOS arm64 + Linux x64）

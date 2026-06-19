@@ -10,10 +10,10 @@ AppVersion={#MyAppVersion}
 AppPublisher={#MyAppPublisher}
 DefaultDirName={commonpf}\arxybin
 DefaultGroupName=arxybin.
-OutputDir=E:\vibe_coding\arxybin\release
+OutputDir=.\release
 OutputBaseFilename=arxybin_v1.0.0_Setup
-WizardImageFile=E:\vibe_coding\arxybin\pictures\install_preview.bmp
-WizardSmallImageFile=E:\vibe_coding\arxybin\pictures\install_preview_small.bmp
+WizardImageFile=.\pictures\install_preview.bmp
+WizardSmallImageFile=.\pictures\install_preview_small.bmp
 Compression=lzma2/max
 SolidCompression=yes
 WizardStyle=modern
@@ -32,11 +32,11 @@ Name: "presets"; Description: "Factory Presets (Documents\arxybin\Presets)"; Typ
 
 [Files]
 ; VST3
-Source: "E:\vibe_coding\arxybin\release\arxybin_v1.0.0\arxybin..vst3\*"; DestDir: "{code:GetVST3Path}"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: vst3
+Source: ".\release\arxybin_v1.0.0\arxybin..vst3\*"; DestDir: "{code:GetVST3Path}"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: vst3
 ; Standalone
-Source: "E:\vibe_coding\arxybin\release\arxybin_v1.0.0\arxybin..exe"; DestDir: "{code:GetStandalonePath}"; Flags: ignoreversion; Components: standalone
+Source: ".\release\arxybin_v1.0.0\arxybin..exe"; DestDir: "{code:GetStandalonePath}"; Flags: ignoreversion; Components: standalone
 ; Factory presets -> factory/
-Source: "E:\vibe_coding\arxybin\release\arxybin_v1.0.0\*.arxybin"; DestDir: "{userdocs}\arxybin\Presets\factory"; Flags: ignoreversion; Components: presets
+Source: ".\release\arxybin_v1.0.0\*.arxybin"; DestDir: "{userdocs}\arxybin\Presets\factory"; Flags: ignoreversion; Components: presets
 
 [Icons]
 Name: "{group}\arxybin. (Standalone)"; Filename: "{code:GetStandalonePath}\arxybin..exe"; Components: standalone
