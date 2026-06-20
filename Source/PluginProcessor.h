@@ -68,8 +68,18 @@ public:
     const float* getDryWave() const { return drySnapshot; }
     const float* getWetWave() const { return wetSnapshot; }
     int getWaveSize() const { return 512; }
+    int getBlockSize() const { return currentBlockSize; }
+
+    // Granular engine state for UI visualization
+    int getRingPos() const { return granularEngine.getRingPos(); }
+    int getRingSize() const { return granularEngine.getRingSize(); }
+    float getScanPhase() const { return granularEngine.getScanPhase(); }
+    int getActiveGrainPositions(float* out, int max) const { return granularEngine.getActiveGrainReadPositions(out, max); }
+    void fillRingSnapshot() { granularEngine.getRingBufferDecimated(ringSnapshot, waveSnapLen); }
+    const float* getRingSnapshot() const { return ringSnapshot; }
 
 private:
+    int currentBlockSize = 0;
     arxybin::GranularEngine  granularEngine;
     arxybin::Distortion      distortion;
     arxybin::Bitcrusher      bitcrusher;
@@ -81,6 +91,8 @@ private:
     static constexpr int waveSnapLen = 512;
     float drySnapshot[waveSnapLen] = {};
     float wetSnapshot[waveSnapLen] = {};
+    float ringSnapshot[waveSnapLen] = {};
+    // getRingSnapshot() + getDryRingSnapshot() declared above in public section
 
     void readParams();
 

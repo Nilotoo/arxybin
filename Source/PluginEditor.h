@@ -29,6 +29,7 @@ private:
         KnobLabel(const juce::String& paramID, juce::AudioProcessorValueTreeState& apvts);
         void paint(juce::Graphics& g) override;
         void mouseDown(const juce::MouseEvent& e) override;
+        void mouseUp(const juce::MouseEvent& e) override;
         void mouseDrag(const juce::MouseEvent& e) override;
         void mouseEnter(const juce::MouseEvent&) override;
         void mouseExit(const juce::MouseEvent&) override;
@@ -51,6 +52,7 @@ private:
         MixLabel(const juce::String& paramID, juce::AudioProcessorValueTreeState& apvts);
         void paint(juce::Graphics& g) override;
         void mouseDown(const juce::MouseEvent& e) override;
+        void mouseUp(const juce::MouseEvent& e) override;
         void mouseDrag(const juce::MouseEvent& e) override;
         void mouseEnter(const juce::MouseEvent&) override;
         void mouseExit(const juce::MouseEvent&) override;
@@ -116,15 +118,7 @@ private:
     float audioLevel = 0.0f;
     void initParticles(); void updateParticles();
 
-    static constexpr int histLen = 720;
-    float dryHist[histLen]={}, wetHist[histLen]={};
-    int histWrite = 0;
 
-    static constexpr int fftSize = 256;
-    float spectrumData[fftSize/2] = {};
-    juce::dsp::FFT fft { static_cast<int>(std::log2(fftSize)) };
-    float fftBuffer[fftSize*2] = {};
-    int fftFill = 0;
 
     juce::Label titleLabel, subLabel;
     juce::TextButton menuButton { "..." };

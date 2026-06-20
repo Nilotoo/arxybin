@@ -11,14 +11,21 @@ namespace arxybin
 
 GranularEngine::GranularEngine()
 {
-    ringL.resize(maxRingSize, 0); ringR.resize(maxRingSize, 0);
+    ringL.resize(maxRingSamples, 0); ringR.resize(maxRingSamples, 0);
+}
+
+void GranularEngine::setCaptureBufferMs(double sr, float ms)
+{
+    maxRingSamples = static_cast<int>(sr * ms * 0.001);
+    maxRingSamples = juce::jmax(64, maxRingSamples);
 }
 
 void GranularEngine::prepare(double sr, int maxBlk)
 {
     sampleRate = sr;
-    ringSz = juce::jmin(maxRingSize, static_cast<int>(sr * 4));
+    ringSz = juce::jmin(maxRingSamples, static_cast<int>(sr * 4));
     ringPos = 0;
+    ringL.resize(maxRingSamples, 0); ringR.resize(maxRingSamples, 0);
     std::fill(ringL.begin(), ringL.end(), 0);
     std::fill(ringR.begin(), ringR.end(), 0);
     fbL.resize(maxBlk, 0); fbR.resize(maxBlk, 0);
@@ -52,8 +59,8 @@ void GranularEngine::processBlock(const juce::AudioBuffer<float>& input,
     const float baseDensity = static_cast<float>(density) * (1.0f + lfoDensMod);
     grainInterval = juce::jmax(1, static_cast<int>(sampleRate / juce::jmax(0.5f, baseDensity)));
 
-    // Forward position based on scan mode
-    const float scanDelta = scanSpeed / sampleRate;
+    // Scan sweep: scanSpeed=1 → one full buffer sweep per buffer duration
+    const float scanDelta = (ringSz > 0) ? scanSpeed / ringSz : 0;
 
     for (int s = 0; s < ns; ++s)
     {
@@ -138,6 +145,37 @@ void GranularEngine::spawnGrain()
     grainIdx = (grainIdx + 1) % maxGrains;
     grains[grainIdx].setup(ringPos, ringSz, size, static_cast<float>(sampleRate),
                             ratio, pos, pan, rev, amp);
+}
+
+int GranularEngine::getActiveGrainReadPositions(float* out, int maxOut) const
+{
+    int count = 0;
+    for (int i = 0; i < maxGrains && count < maxOut; ++i)
+    {
+        if (grains[i].isActive())
+        {
+            out[count] = grains[i].getReadPos();
+            ++count;
+        }
+    }
+    return count;
+}
+
+void GranularEngine::getRingBufferDecimated(float* out, int outLen) const
+{
+    if (ringSz <= 0) { std::fill(out, out + outLen, 0.0f); return; }
+    const int step = juce::jmax(1, ringSz / outLen);
+    // Average over step window to prevent jitter, newest→oldest order
+    for (int i = 0; i < outLen; ++i)
+    {
+        float sum = 0.0f; int cnt = 0;
+        for (int j = 0; j < step; ++j)
+        {
+            int idx = (ringPos - (i * step + j) - 1 + ringSz * 2) % ringSz;
+            sum += ringL[idx]; ++cnt;
+        }
+        out[i] = sum / (float)cnt;
+    }
 }
 
 } // namespace arxybin

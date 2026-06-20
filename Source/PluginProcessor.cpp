@@ -31,6 +31,7 @@ void ArxybinAudioProcessor::changeProgramName(int, const juce::String&) {}
 
 void ArxybinAudioProcessor::prepareToPlay(double sr, int blockSize)
 {
+    currentBlockSize = blockSize;
     granularEngine.prepare(sr, blockSize);
     distortion.prepare(sr);
     bitcrusher.prepare(sr);
@@ -129,6 +130,33 @@ void ArxybinAudioProcessor::readParams()
         p3.target= static_cast<arxybin::LfoTarget>(static_cast<int>(gp(ParamID::lfo3Target)));
         lfo.setLfo3Params(p3);
     }
+
+    // Capture buffer size + BPM sync
+    float capMs = gp(ParamID::captureBufferMs);
+    bool bpmSync = gp(ParamID::bpmSync) > 0.5f;
+    if (bpmSync)
+    {
+        if (auto* ph = getPlayHead())
+        {
+            auto pos = ph->getPosition();
+            if (pos && pos->getBpm())
+            {
+                double bpm = *pos->getBpm();
+                if (bpm > 1.0)
+                {
+                    double beatMs = 60000.0 / bpm;
+                    // Snap to nearest beat fraction
+                    double options[] = { beatMs * 0.25, beatMs * 0.5, beatMs, beatMs * 2, beatMs * 4, beatMs * 8 };
+                    double best = capMs;
+                    for (double opt : options) {
+                        if (std::abs(opt - capMs) < std::abs(best - capMs)) best = opt;
+                    }
+                    capMs = juce::jlimit(20.0f, 30000.0f, (float)best);
+                }
+            }
+        }
+    }
+    granularEngine.setCaptureBufferMs(getSampleRate(), capMs);
 }
 
 void ArxybinAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer&)
@@ -236,6 +264,7 @@ void ArxybinAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce:
             wetSnapshot[i] = buffer.getSample(0, idx);
         }
     }
+    granularEngine.getRingBufferDecimated(ringSnapshot, waveSnapLen);
 }
 
 bool ArxybinAudioProcessor::hasEditor() const { return true; }

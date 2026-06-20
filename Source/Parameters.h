@@ -24,6 +24,7 @@ namespace ParamID
     // Scan (4)
     DECLARE_ID(scanMode);       DECLARE_ID(scanSpeed);
     DECLARE_ID(grainPosition);  DECLARE_ID(positionRandom);
+    DECLARE_ID(captureBufferMs); DECLARE_ID(bpmSync);
 
     // Placement (5)
     DECLARE_ID(placeOffset);    DECLARE_ID(placeGrid);
@@ -108,6 +109,9 @@ inline juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout
     fp(ParamID::scanSpeed,    "Scan Speed",    0.1f, 10, 0.1f, 1);
     fp(ParamID::grainPosition,"Position",      0,   100, 1,   50);
     fp(ParamID::positionRandom,"Spray",         0,   100, 1,   50);
+    // Capture
+    fp(ParamID::captureBufferMs,"CapBuf",        20,  30000, 1,  4000);
+    bo(ParamID::bpmSync,        "BPM Sync",      false);
 
     // ======================== PLACEMENT (5) ====================================
     fp(ParamID::placeOffset,  "Offset",        0,   100, 1,   0);

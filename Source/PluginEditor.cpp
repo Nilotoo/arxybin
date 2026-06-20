@@ -113,6 +113,28 @@ void ArxybinAudioProcessorEditor::KnobLabel::mouseExit(const juce::MouseEvent&)
     { hovering = false; repaint(); }
 void ArxybinAudioProcessorEditor::KnobLabel::mouseDown(const juce::MouseEvent& e)
 {
+    // Double-click: reset to default
+    if (e.getNumberOfClicks() == 2)
+    {
+        if (auto* p = apvts.getParameter(pid))
+        {
+            float defVal = p->getDefaultValue();
+            currentValue = defVal; displayValue = defVal;
+            p->setValueNotifyingHost(defVal); repaint();
+        }
+        return;
+    }
+    // Alt+click: reset to default
+    if (e.mods.isAltDown())
+    {
+        if (auto* p = apvts.getParameter(pid))
+        {
+            float defVal = p->getDefaultValue();
+            currentValue = defVal; displayValue = defVal;
+            p->setValueNotifyingHost(defVal); repaint();
+        }
+        return;
+    }
     dragStartVal = currentValue;
     dragStartY   = e.getScreenY();
     setMouseCursor(juce::MouseCursor::UpDownResizeCursor);
@@ -125,6 +147,35 @@ void ArxybinAudioProcessorEditor::KnobLabel::mouseDrag(const juce::MouseEvent& e
     if (auto* p = apvts.getParameter(pid))
         p->setValueNotifyingHost(nv);
     repaint();
+}
+void ArxybinAudioProcessorEditor::KnobLabel::mouseUp(const juce::MouseEvent& e)
+{
+    if (e.mods.isRightButtonDown())
+    {
+        if (auto* p = apvts.getParameter(pid))
+        {
+            auto* ed = new juce::TextEditor();
+            ed->setText(p->getCurrentValueAsText(), juce::dontSendNotification);
+            ed->setFont(juce::Font{ juce::FontOptions{}.withPointHeight(11.0f) });
+            ed->setColour(juce::TextEditor::backgroundColourId, juce::Colour(0xFFF8F8FA));
+            ed->setColour(juce::TextEditor::textColourId, juce::Colour(0xFF1A2A35));
+            ed->setColour(juce::TextEditor::outlineColourId, juce::Colour(0xFF3A6B8C));
+            ed->setSize(70, 22);
+            ed->setTopLeftPosition(getScreenX() + getWidth() / 2 - 35, getScreenY() - 28);
+            ed->setAlwaysOnTop(true); ed->addToDesktop(0);
+            ed->grabKeyboardFocus();
+            ed->onReturnKey = [this, ed, p] {
+                float val = ed->getText().getFloatValue();
+                auto rng = p->getNormalisableRange();
+                val = juce::jlimit(rng.start, rng.end, val);
+                float norm = p->convertTo0to1(val);
+                currentValue = norm; displayValue = norm;
+                p->setValueNotifyingHost(norm); repaint(); delete ed;
+            };
+            ed->onEscapeKey = [ed] { delete ed; };
+            ed->onFocusLost = [ed] { delete ed; };
+        }
+    }
 }
 
 // ==============================================================================
@@ -182,6 +233,26 @@ void ArxybinAudioProcessorEditor::MixLabel::mouseExit(const juce::MouseEvent&)
     { hovering = false; repaint(); }
 void ArxybinAudioProcessorEditor::MixLabel::mouseDown(const juce::MouseEvent& e)
 {
+    // Double-click: reset to default
+    if (e.getNumberOfClicks() == 2)
+    {
+        if (auto* p = apvts.getParameter(pid))
+        {
+            p->setValueNotifyingHost(p->getDefaultValue());
+            updateDisplay();
+        }
+        return;
+    }
+    // Alt+click: reset to default
+    if (e.mods.isAltDown())
+    {
+        if (auto* p = apvts.getParameter(pid))
+        {
+            p->setValueNotifyingHost(p->getDefaultValue());
+            updateDisplay();
+        }
+        return;
+    }
     if (auto* p = apvts.getParameter(pid)) dragStartVal = p->getValue();
     dragStartY = e.getScreenY();
     setMouseCursor(juce::MouseCursor::UpDownResizeCursor);
@@ -193,6 +264,34 @@ void ArxybinAudioProcessorEditor::MixLabel::mouseDrag(const juce::MouseEvent& e)
         float nv = juce::jlimit(0.0f, 1.0f, dragStartVal + (dragStartY - e.getScreenY()) * 0.005f);
         p->setValueNotifyingHost(nv);
         updateDisplay();
+    }
+}
+void ArxybinAudioProcessorEditor::MixLabel::mouseUp(const juce::MouseEvent& e)
+{
+    if (e.mods.isRightButtonDown())
+    {
+        if (auto* p = apvts.getParameter(pid))
+        {
+            auto* ed = new juce::TextEditor();
+            ed->setText(p->getCurrentValueAsText(), juce::dontSendNotification);
+            ed->setFont(juce::Font{ juce::FontOptions{}.withPointHeight(11.0f) });
+            ed->setColour(juce::TextEditor::backgroundColourId, juce::Colour(0xFFF8F8FA));
+            ed->setColour(juce::TextEditor::textColourId, juce::Colour(0xFF1A2A35));
+            ed->setColour(juce::TextEditor::outlineColourId, juce::Colour(0xFF3A6B8C));
+            ed->setSize(70, 22);
+            ed->setTopLeftPosition(getScreenX() + getWidth() / 2 - 35, getScreenY() - 28);
+            ed->setAlwaysOnTop(true); ed->addToDesktop(0);
+            ed->grabKeyboardFocus();
+            ed->onReturnKey = [this, ed, p] {
+                float val = ed->getText().getFloatValue();
+                auto rng = p->getNormalisableRange();
+                val = juce::jlimit(rng.start, rng.end, val);
+                p->setValueNotifyingHost(p->convertTo0to1(val));
+                updateDisplay(); delete ed;
+            };
+            ed->onEscapeKey = [ed] { delete ed; };
+            ed->onFocusLost = [ed] { delete ed; };
+        }
     }
 }
 
@@ -342,8 +441,6 @@ ArxybinAudioProcessorEditor::ArxybinAudioProcessorEditor(ArxybinAudioProcessor& 
     addAndMakeVisible(footerTag);
 
     initParticles();
-    for (float& v : dryHist) v=0; for (float& v : wetHist) v=0;
-    for (float& v : spectrumData) v=0; for (float& v : fftBuffer) v=0;
 
     updatePresetList();
     switchTab(0);
@@ -681,18 +778,14 @@ void ArxybinAudioProcessorEditor::timerCallback()
         }
     }
 
-    const auto *d=proc.getDryWave(),*wv=proc.getWetWave();int n=proc.getWaveSize();
-    float dp=0,wp=0;
-    for(int i=0;i<n;++i){dp=juce::jmax(dp,std::abs(d[i]));wp=juce::jmax(wp,std::abs(wv[i]));}
-    int idx=histWrite%histLen;dryHist[idx]=dp;wetHist[idx]=wp;++histWrite;
-    audioLevel=audioLevel*0.92f+(dp+wp)*0.08f;audioLevel=juce::jlimit(0.0f,1.0f,audioLevel);
-    int tc=juce::jmin(n,fftSize-fftFill);
-    for(int i=0;i<tc;++i){fftBuffer[(fftFill+i)*2]=wv[i];fftBuffer[(fftFill+i)*2+1]=0;}
-    fftFill+=tc;
-    if(fftFill>=fftSize){fft.performRealOnlyForwardTransform(fftBuffer,true);
-        for(int i=0;i<fftSize/2;++i){float re=fftBuffer[i*2],im=fftBuffer[i*2+1];
-            spectrumData[i]=spectrumData[i]*0.65f+(std::sqrt(re*re+im*im)/fftSize)*0.35f;}fftFill=0;}
-    updateParticles();repaint(waveRect);repaint(asciiRect);
+    // Audio level for particles
+    const auto *wv = proc.getWetWave(); int n = proc.getWaveSize();
+    float wp = 0;
+    for (int i = 0; i < n; ++i) wp = juce::jmax(wp, std::abs(wv[i]));
+    audioLevel = audioLevel * 0.92f + wp * 0.08f;
+    audioLevel = juce::jlimit(0.0f, 1.0f, audioLevel);
+
+    updateParticles(); repaint(waveRect); repaint(asciiRect);
 }
 void ArxybinAudioProcessorEditor::initParticles()
 {
@@ -765,6 +858,38 @@ void ArxybinAudioProcessorEditor::showSettingsMenu()
             });
     });
     m.addSeparator();
+    m.addSectionHeader("Capture Buffer");
+    m.addItem("Set Buffer (ms)...", [this]{
+        auto* dw = new juce::DialogWindow("Capture Buffer Size", juce::Colour(0xFFD8DCE4), true, true);
+        auto* ed = new juce::TextEditor();
+        ed->setText(juce::String(proc.apvts.getRawParameterValue("captureBufferMs")->load(), 0));
+        ed->setFont(juce::Font{ juce::FontOptions{}.withPointHeight(14.0f) });
+        ed->setSize(150, 28);
+        ed->setColour(juce::TextEditor::backgroundColourId, juce::Colour(0xFFFFFFFF));
+        ed->setColour(juce::TextEditor::textColourId, juce::Colour(0xFF1A2A35));
+        ed->setColour(juce::TextEditor::outlineColourId, juce::Colour(0xFF3A6B8C));
+        dw->setContentOwned(ed, true);
+        dw->setSize(200, 70);
+        dw->centreAroundComponent(&menuButton, dw->getWidth(), dw->getHeight());
+        dw->setVisible(true);
+        ed->grabKeyboardFocus();
+        auto apply = [this, ed, dw] {
+            float val = ed->getText().getFloatValue();
+            val = juce::jlimit(20.0f, 30000.0f, val);
+            if (auto* p = proc.apvts.getParameter("captureBufferMs"))
+                p->setValueNotifyingHost(p->convertTo0to1(val));
+            dw->exitModalState(0);
+        };
+        ed->onReturnKey = apply;
+        ed->onEscapeKey = [dw] { dw->exitModalState(0); };
+        dw->enterModalState(true, juce::ModalCallbackFunction::create([dw](int) { delete dw; }), true);
+    });
+    bool bpmOn = proc.apvts.getRawParameterValue("bpmSync")->load() > 0.5f;
+    m.addItem("BPM Sync: " + juce::String(bpmOn ? "ON" : "OFF"), true, bpmOn, [this, bpmOn]{
+        if (auto* p = proc.apvts.getParameter("bpmSync"))
+            p->setValueNotifyingHost(bpmOn ? 0.0f : 1.0f);
+    });
+    m.addSeparator();
     m.addItem("Close",true,false,nullptr);
     m.showMenuAsync(juce::PopupMenu::Options{}.withTargetComponent(&menuButton));
 }
@@ -797,37 +922,69 @@ void ArxybinAudioProcessorEditor::paint(juce::Graphics& g)
     g.setColour(juce::Colour(0x10000000)); g.drawRoundedRectangle(waveRect.toFloat().translated(0,1),10,2.5f);
     g.setColour(azure.withAlpha(0.30f)); g.drawRoundedRectangle(waveRect.toFloat().reduced(0.5f),10,1.2f);
     float wfW=(float)(waveRect.getWidth()-24),wfH=(float)(waveRect.getHeight()-24);
-    float wfX=(float)(waveRect.getX()+12),wfY=(float)(waveRect.getY()+12),midY=wfY+wfH*0.5f;
-    int nb=64;float bw=wfW/nb;
-    for(int i=0;i<nb;++i){int si=juce::jmin(i*2,(fftSize/2)-1);float bh=spectrumData[si]*wfH*0.7f,bx=wfX+i*bw;
-        g.setColour(azure.withAlpha(0.08f+spectrumData[si]*0.25f));
-        g.fillRoundedRectangle(bx+1,midY-bh*0.5f,bw-2,juce::jmax(1.0f,bh),2);
-        g.setColour(azure.withAlpha(0.03f+spectrumData[si]*0.1f));
-        g.fillRoundedRectangle(bx+1,midY+bh*0.5f,bw-2,juce::jmax(1.0f,bh),2);}
-    int st=juce::jmax(0,histWrite-histLen),vis=juce::jmin(histWrite,histLen);
-    {juce::Path dp;dp.startNewSubPath(wfX,midY);
-        for(int i=0;i<vis;++i){int id=(st+i)%histLen;
-            dp.lineTo(wfX+wfW*i/(float)(histLen-1),midY-dryHist[id]*wfH*0.44f);}
-        for(int i=vis-1;i>=0;--i){int id=(st+i)%histLen;
-            dp.lineTo(wfX+wfW*i/(float)(histLen-1),midY+dryHist[id]*wfH*0.44f);}
-        dp.closeSubPath();g.setColour(dryBlue.withAlpha(0.15f));g.fillPath(dp);
-        g.setColour(dryBlue.withAlpha(0.55f));g.strokePath(dp,juce::PathStrokeType(1.3f));}
-    {juce::Path wp;bool f=true;
-        for(int i=0;i<vis;++i){int id=(st+i)%histLen;float x=wfX+wfW*i/(float)(histLen-1),y=midY-wetHist[id]*wfH*0.42f;
-            if(f){wp.startNewSubPath(x,y);f=false;}else wp.lineTo(x,y);}
-        g.setColour(wetGreen.withAlpha(0.2f));g.strokePath(wp,juce::PathStrokeType(4.5f));
-        g.setColour(wetGreen.withAlpha(0.9f));g.strokePath(wp,juce::PathStrokeType(1.5f));}
-    g.setColour(paleAz.withAlpha(0.4f));g.drawHorizontalLine((int)midY,wfX,wfX+wfW);
-    g.setColour(paleAz.withAlpha(0.15f));
-    for(int i=0;i<4;++i)g.drawHorizontalLine((int)(wfY+wfH*(0.25f+i*0.25f)),wfX,wfX+wfW);
+    float wfX=(float)(waveRect.getX()+12),wfY=(float)(waveRect.getY()+12);
+
+    // --- Buffer oscilloscope ---
+    const int ringSz = proc.getRingSize();
+    const int ringPos = proc.getRingPos();
+    float scanPhase = proc.getScanPhase();
+    if (scanPhase < 0.0f) scanPhase += std::floor(-scanPhase) + 1.0f;
+    if (scanPhase >= 1.0f) scanPhase -= std::floor(scanPhase);
+
+    if (ringSz > 0)
+    {
+        // Buffer waveform — engine ring buffer, oldest at left, newest at right
+        const float* ringData = proc.getRingSnapshot();
+        const int nPts = proc.getWaveSize();
+        juce::Path rp; bool rf = true;
+        for (int i = 0; i < nPts; ++i)
+        {
+            float frac = (float)i / (float)(nPts - 1);
+            float x = wfX + wfW * (1.0f - frac);  // reversed: i=0 (newest) → right
+            float y = wfY + wfH * 0.5f - ringData[i] * wfH * 0.45f;
+            if (rf) { rp.startNewSubPath(x, y); rf = false; }
+            else rp.lineTo(x, y);
+        }
+        g.setColour(juce::Colour(0xCC7A9DB8));
+        g.strokePath(rp, juce::PathStrokeType(1.8f));
+
+        // Sweep cursor — white line at write head (newest data at right)
+        float sweepFrac = (float)ringPos / (float)ringSz;
+        float sweepX = wfX + wfW * (1.0f - sweepFrac);
+        g.setColour(juce::Colour(0x88FFFFFF));
+        g.fillRect(sweepX - 0.5f, wfY, 1.5f, wfH);
+
+        // Position — blue line
+        float posVal = proc.apvts.getRawParameterValue("grainPosition")->load() * 0.01f;
+        float px = wfX + wfW * (1.0f - posVal);
+        g.setColour(dryBlue.withAlpha(0.65f));
+        g.fillRect(px - 1.5f, wfY, 3.0f, wfH);
+
+        // Active grain read lines — green (reversed)
+        float grainPos[256];
+        int nGrains = proc.getActiveGrainPositions(grainPos, 256);
+        for (int i = 0; i < nGrains; ++i)
+        {
+            float gx = wfX + wfW * (1.0f - grainPos[i] / (float)ringSz);
+            g.setColour(wetGreen.withAlpha(0.7f));
+            g.fillRect(gx - 0.5f, wfY + wfH * 0.15f, 1.0f, wfH * 0.7f);
+        }
+    }
+
+    // Labels
     g.setColour(divLine.withAlpha(0.6f));g.drawRoundedRectangle(waveRect.toFloat().reduced(0.5f),10,1.3f);
-    g.setFont(juce::Font{juce::FontOptions{}.withPointHeight(9)});
-    g.setColour(dryBlue.withAlpha(0.75f));g.drawText("dry",waveRect.getX()+16,waveRect.getY()+6,30,12,juce::Justification::left);
-    g.setColour(wetGreen.withAlpha(0.9f));g.drawText("wet",waveRect.getX()+48,waveRect.getY()+6,30,12,juce::Justification::left);
+    g.setFont(juce::Font{ juce::FontOptions{}.withPointHeight(8.0f) });
+    g.setColour(paleAz.withAlpha(0.75f));
+    float capMs = proc.apvts.getRawParameterValue("captureBufferMs")->load();
+    g.drawText("cap: " + juce::String(capMs, 0) + "ms  buf:" + juce::String(proc.getBlockSize()),
+        waveRect.getX() + 10, waveRect.getY() + 4, waveRect.getWidth() - 20, 12, juce::Justification::left);
+    g.setColour(dryBlue.withAlpha(0.75f));
+    g.drawText("pos", waveRect.getRight() - 40, waveRect.getY() + 4, 30, 12, juce::Justification::right);
 
     g.setColour(paleAz.withAlpha(0.5f));
     g.setFont(juce::Font{juce::FontOptions{}.withPointHeight(9)});
     g.drawText(".  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  ",asciiRect,juce::Justification::centred);
+
     g.setColour(divLine.withAlpha(0.5f));g.drawHorizontalLine(asciiRect.getY(),20,w-20);
 
     // Parameter area — soft feathered shadow

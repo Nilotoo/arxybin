@@ -43,9 +43,17 @@ public:
     void processBlock(const juce::AudioBuffer<float>& input,
                       juce::AudioBuffer<float>& output);
 
+    // Getters for UI visualization
+    int getRingPos() const { return ringPos; }
+    int getRingSize() const { return ringSz; }
+    float getScanPhase() const { return static_cast<float>(scanPhase); }
+    int getActiveGrainReadPositions(float* out, int maxGrains) const;
+    void getRingBufferDecimated(float* out, int outLen) const;
+    void setCaptureBufferMs(double sr, float ms);
+
 private:
-    static constexpr int maxRingSize = 44100 * 4;
-    static constexpr int maxGrains   = 256;
+    int maxRingSamples = 44100 * 4; // dynamic, default 4s
+    static constexpr int maxGrains = 256;
     std::vector<float> ringL, ringR;
     std::array<Grain, maxGrains> grains;
     int ringPos = 0, ringSz = 0, grainIdx = 0;

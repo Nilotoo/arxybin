@@ -45,6 +45,7 @@ public:
     // --- Lifecycle ------------------------------------------------------------
     bool isActive() const noexcept { return active; }
     bool isFinished() const noexcept { return finished; }
+    float getReadPos() const noexcept { return readPos; }
 
     // --- Envelope -------------------------------------------------------------
     // Returns the amplitude envelope value for the current position
