@@ -128,7 +128,9 @@ private:
     std::unique_ptr<PresetSavePopup> savePopup;
     juce::Component::SafePointer<juce::DialogWindow> modWindow;
 
-    juce::Rectangle<int> waveRect, asciiRect, paramRect, mixRect;
+    juce::Rectangle<int> waveRect, asciiRect, paramRect, mixRect, ampSliderRect;
+    juce::Slider bufferAmpSlider;
+    float bufferVisualAmp = 0.5f;
 
     void showSettingsMenu(); void showModWindow();
     void updatePresetList(); void loadPresetFromBox(); void saveCurrentPreset();

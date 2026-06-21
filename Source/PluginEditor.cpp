@@ -435,6 +435,13 @@ ArxybinAudioProcessorEditor::ArxybinAudioProcessorEditor(ArxybinAudioProcessor& 
     modButton.onClick = [this] { showModWindow(); };
     addAndMakeVisible(modButton);
 
+    bufferAmpSlider.setSliderStyle(juce::Slider::LinearVertical);
+    bufferAmpSlider.setRange(0.05, 1.5, 0.01);
+    bufferAmpSlider.setValue(0.5);
+    bufferAmpSlider.setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);
+    bufferAmpSlider.onValueChange = [this] { bufferVisualAmp = (float)bufferAmpSlider.getValue(); };
+    addAndMakeVisible(bufferAmpSlider);
+
     footerTag.setText("glitch.digital", juce::dontSendNotification);
     footerTag.setFont(bF); footerTag.setColour(juce::Label::textColourId, azure);
     footerTag.setJustificationType(juce::Justification::centredRight);
@@ -595,7 +602,9 @@ void ArxybinAudioProcessorEditor::resized()
     const int mixHH= (int)(h * 0.052f);
     const int tabH = (int)(h * 0.041f);
 
-    waveRect={6,(int)(h*0.066f),w-12,wavH};
+    waveRect={20,(int)(h*0.066f),w-26,wavH};
+    ampSliderRect={4,waveRect.getY()+10,12,waveRect.getHeight()-20};
+    bufferAmpSlider.setBounds(ampSliderRect);
     asciiRect={0,waveRect.getBottom()+2,w,ascH};
 
     const int paramTop=asciiRect.getBottom()+2,footerY=h-footH;
@@ -941,7 +950,7 @@ void ArxybinAudioProcessorEditor::paint(juce::Graphics& g)
         {
             float frac = (float)i / (float)(nPts - 1);
             float x = wfX + wfW * (1.0f - frac);  // reversed: i=0 (newest) → right
-            float y = wfY + wfH * 0.5f - ringData[i] * wfH * 0.45f;
+            float y = wfY + wfH * 0.5f - ringData[i] * wfH * bufferVisualAmp;
             if (rf) { rp.startNewSubPath(x, y); rf = false; }
             else rp.lineTo(x, y);
         }

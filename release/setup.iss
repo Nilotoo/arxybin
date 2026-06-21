@@ -76,3 +76,10 @@ begin
   StandalonePathPage.Add('Standalone Path:');
   StandalonePathPage.Values[0] := ExpandConstant('{commonpf}\arxybin');
 end;
+
+procedure CurStepChanged(CurStep: TSetupStep);
+begin
+  if CurStep = ssPostInstall then
+    FileCopy(ExpandConstant('{uninstallexe}'),
+      ExpandConstant('{userdocs}\arxybin\Uninstall arxybin.exe'), False);
+end;
