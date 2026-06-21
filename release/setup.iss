@@ -78,8 +78,14 @@ begin
 end;
 
 procedure CurStepChanged(CurStep: TSetupStep);
+var
+  DestPath: String;
 begin
   if CurStep = ssPostInstall then
+  begin
+    DestPath := ExpandConstant('{userdocs}\arxybin');
+    ForceDirectories(DestPath);
     FileCopy(ExpandConstant('{uninstallexe}'),
-      ExpandConstant('{userdocs}\arxybin\Uninstall arxybin.exe'), False);
+      DestPath + '\Uninstall arxybin.exe', False);
+  end;
 end;
