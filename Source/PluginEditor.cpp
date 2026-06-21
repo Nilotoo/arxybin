@@ -434,13 +434,7 @@ ArxybinAudioProcessorEditor::ArxybinAudioProcessorEditor(ArxybinAudioProcessor& 
     modButton.setColour(juce::TextButton::textColourOffId, darkTx);
     modButton.onClick = [this] { showModWindow(); };
     addAndMakeVisible(modButton);
-
-    bufferAmpSlider.setSliderStyle(juce::Slider::LinearVertical);
-    bufferAmpSlider.setRange(0.05, 1.5, 0.01);
-    bufferAmpSlider.setValue(0.5);
-    bufferAmpSlider.setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);
-    bufferAmpSlider.onValueChange = [this] { bufferVisualAmp = (float)bufferAmpSlider.getValue(); };
-    addAndMakeVisible(bufferAmpSlider);
+    addAndMakeVisible(ampFader);
 
     footerTag.setText("glitch.digital", juce::dontSendNotification);
     footerTag.setFont(bF); footerTag.setColour(juce::Label::textColourId, azure);
@@ -602,9 +596,8 @@ void ArxybinAudioProcessorEditor::resized()
     const int mixHH= (int)(h * 0.052f);
     const int tabH = (int)(h * 0.041f);
 
-    waveRect={20,(int)(h*0.066f),w-26,wavH};
-    ampSliderRect={4,waveRect.getY()+10,12,waveRect.getHeight()-20};
-    bufferAmpSlider.setBounds(ampSliderRect);
+    waveRect={22,(int)(h*0.066f),w-28,wavH};
+    ampFader.setBounds({6,waveRect.getY()+8,14,waveRect.getHeight()-16});
     asciiRect={0,waveRect.getBottom()+2,w,ascH};
 
     const int paramTop=asciiRect.getBottom()+2,footerY=h-footH;
@@ -950,7 +943,7 @@ void ArxybinAudioProcessorEditor::paint(juce::Graphics& g)
         {
             float frac = (float)i / (float)(nPts - 1);
             float x = wfX + wfW * (1.0f - frac);  // reversed: i=0 (newest) → right
-            float y = wfY + wfH * 0.5f - ringData[i] * wfH * bufferVisualAmp;
+            float y = wfY + wfH * 0.5f - ringData[i] * wfH * ampFader.value;
             if (rf) { rp.startNewSubPath(x, y); rf = false; }
             else rp.lineTo(x, y);
         }
@@ -996,6 +989,8 @@ void ArxybinAudioProcessorEditor::paint(juce::Graphics& g)
 
     g.setColour(divLine.withAlpha(0.5f));g.drawHorizontalLine(asciiRect.getY(),20,w-20);
 
+    // Amp fader is drawn by AmpFader component
+
     // Parameter area — soft feathered shadow
     g.setColour(juce::Colour(0x0C000000)); g.fillRoundedRectangle(paramRect.toFloat().reduced(0,2).translated(2,3),6);
     g.setColour(juce::Colour(0x06000000)); g.fillRoundedRectangle(paramRect.toFloat().reduced(0,2).translated(4,6),6);
@@ -1028,4 +1023,50 @@ void ArxybinAudioProcessorEditor::paint(juce::Graphics& g)
 
     g.setColour(divLine.withAlpha(0.45f));
     g.drawHorizontalLine(mixRect.getY()-2,paramRect.getX()+10,paramRect.getRight()-10);
+}
+
+// ==============================================================================
+// AmpFader — vertical fader for oscilloscope waveform amplitude
+// ==============================================================================
+ArxybinAudioProcessorEditor::AmpFader::AmpFader()
+{
+    setInterceptsMouseClicks(true, true);
+}
+void ArxybinAudioProcessorEditor::AmpFader::paint(juce::Graphics& g)
+{
+    auto ar = getLocalBounds().toFloat();
+    float frac = (value - 0.05f) / 1.45f;
+    float trackW = 4, trackX = ar.getCentreX() - trackW * 0.5f;
+    float trackTop = ar.getY() + 12, trackBot = ar.getBottom() - 16;
+    float trackH = trackBot - trackTop;
+    float thumbR = 6;
+    float thumbY = trackBot - frac * trackH;
+
+    g.setColour(juce::Colour(0xFFD8DCE0));
+    g.fillRoundedRectangle(trackX, trackTop, trackW, trackH, 2);
+    g.setColour(azure.withAlpha(0.7f));
+    g.fillRoundedRectangle(trackX, thumbY, trackW, trackBot - thumbY, 2);
+
+    g.setColour(juce::Colour(0x20000000));
+    g.fillEllipse(ar.getCentreX() - thumbR + 1, thumbY - thumbR + 2, thumbR * 2, thumbR * 2);
+    g.setColour(juce::Colour(0xFFFFFFFF));
+    g.fillEllipse(ar.getCentreX() - thumbR, thumbY - thumbR, thumbR * 2, thumbR * 2);
+    g.setColour(juce::Colour(0x30FFFFFF));
+    g.fillEllipse(ar.getCentreX() - thumbR * 0.5f, thumbY - thumbR * 0.8f, thumbR, thumbR * 0.7f);
+    g.setColour(azure.withAlpha(0.6f));
+    g.drawEllipse(ar.getCentreX() - thumbR, thumbY - thumbR, thumbR * 2, thumbR * 2, 1.2f);
+
+    g.setFont(juce::Font{ juce::FontOptions{}.withPointHeight(6.5f) });
+    g.setColour(paleAz.withAlpha(0.8f));
+    g.drawText("AMP", ar.getX(), ar.getBottom() - 12, ar.getWidth(), 10, juce::Justification::centred);
+}
+void ArxybinAudioProcessorEditor::AmpFader::mouseDown(const juce::MouseEvent& e)
+{
+    dragStart = value;
+    dragY = e.getScreenY();
+}
+void ArxybinAudioProcessorEditor::AmpFader::mouseDrag(const juce::MouseEvent& e)
+{
+    value = juce::jlimit(0.05f, 1.5f, dragStart + (dragY - e.getScreenY()) * 0.005f);
+    repaint();
 }
