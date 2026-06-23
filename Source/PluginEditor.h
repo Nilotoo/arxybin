@@ -58,9 +58,11 @@ private:
         void mouseExit(const juce::MouseEvent&) override;
         void updateDisplay();
         float getNormValue() const;
+        void setLfoMod(float m) { lfoMod = m; }
 
         juce::AudioProcessorValueTreeState& apvts;
         juce::String pid;
+        float lfoMod = 0.0f;
         float dragStartVal = 0.0f;
         int   dragStartY = 0;
         bool  hovering = false;

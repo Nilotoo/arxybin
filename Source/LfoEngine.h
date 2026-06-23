@@ -1,7 +1,7 @@
 /*
   ==============================================================================
     arxybin. — LFO Engine.
-    Two independent LFOs. Each computes a modulation value per sample.
+    Four independent LFOs. Each computes a modulation value per sample.
     Waveforms: Sine, Triangle, Saw, Square, Sample & Hold.
     Rate: 0.01 – 1000 Hz.  Depth: 0 – 100%.  Target: assignable.
   ==============================================================================
@@ -17,7 +17,8 @@ namespace arxybin
 // ==============================================================================
 enum class LfoWaveform { Sine, Triangle, Saw, Square, SampleAndHold };
 enum class LfoTarget    { Off, GrainPitch, GrainPosition, GrainPan, GrainSize, GrainDensity,
-                             DistDrive, BitDepth, StutterProb, StutterLen, ShuffleAmt, ShuffleSize };
+                             DistDrive, BitDepth, StutterProb, StutterLen, ShuffleAmt, ShuffleSize,
+                             DryWet, InGain, OutGain, DistMix, BitMix, StutterMix, ShuffleMix };
 
 struct LfoParams
 {
@@ -54,7 +55,7 @@ private:
 };
 
 // ==============================================================================
-// Dual LFO manager
+// Quad LFO manager
 // ==============================================================================
 class DualLfo
 {
@@ -65,16 +66,18 @@ public:
     void setLfo1(const LfoParams& p) { lfo1.setParams(p); }
     void setLfo2(const LfoParams& p) { lfo2.setParams(p); }
     void setLfo3(const LfoParams& p) { lfo3.setParams(p); }
+    void setLfo4(const LfoParams& p) { lfo4.setParams(p); }
 
     const LfoParams& getLfo1Params() const { return lfo1Params; }
     const LfoParams& getLfo2Params() const { return lfo2Params; }
     const LfoParams& getLfo3Params() const { return lfo3Params; }
+    const LfoParams& getLfo4Params() const { return lfo4Params; }
     void setLfo1Params(const LfoParams& p) { lfo1Params = p; lfo1.setParams(p); }
     void setLfo2Params(const LfoParams& p) { lfo2Params = p; lfo2.setParams(p); }
     void setLfo3Params(const LfoParams& p) { lfo3Params = p; lfo3.setParams(p); }
+    void setLfo4Params(const LfoParams& p) { lfo4Params = p; lfo4.setParams(p); }
 
-    // Process both LFOs. Returns modulated values for pitch, position, pan,
-    // size, density (applied by caller).
+    // Process all LFOs. Returns modulated values for all targets.
     struct ModValues
     {
         float pitchMod    = 0.0f;
@@ -88,13 +91,20 @@ public:
         float stutLenMod  = 0.0f;
         float shufAmtMod  = 0.0f;
         float shufSzMod   = 0.0f;
+        float dryWetMod   = 0.0f;
+        float inGainMod   = 0.0f;
+        float outGainMod  = 0.0f;
+        float distMixMod  = 0.0f;
+        float bitMixMod   = 0.0f;
+        float stutMixMod  = 0.0f;
+        float shfMixMod   = 0.0f;
     };
 
     ModValues process();
 
 private:
-    LfoEngine  lfo1, lfo2, lfo3;
-    LfoParams  lfo1Params, lfo2Params, lfo3Params;
+    LfoEngine  lfo1, lfo2, lfo3, lfo4;
+    LfoParams  lfo1Params, lfo2Params, lfo3Params, lfo4Params;
 };
 
 } // namespace arxybin

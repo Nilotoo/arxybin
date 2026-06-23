@@ -129,6 +129,40 @@ void ArxybinAudioProcessor::readParams()
         p3.wave  = static_cast<arxybin::LfoWaveform>(static_cast<int>(gp(ParamID::lfo3Wave)));
         p3.target= static_cast<arxybin::LfoTarget>(static_cast<int>(gp(ParamID::lfo3Target)));
         lfo.setLfo3Params(p3);
+
+        arxybin::LfoParams p4;
+        p4.rate  = gp(ParamID::lfo4Rate);
+        p4.depth = gp(ParamID::lfo4Depth);
+        p4.wave  = static_cast<arxybin::LfoWaveform>(static_cast<int>(gp(ParamID::lfo4Wave)));
+        p4.target= static_cast<arxybin::LfoTarget>(static_cast<int>(gp(ParamID::lfo4Target)));
+
+        // LFO BPM Sync
+        auto syncRate = [&](const juce::String& syncId, float& rate) {
+            int syncIdx = static_cast<int>(gp(syncId));
+            if (syncIdx > 0 && getPlayHead())
+            {
+                auto pos = getPlayHead()->getPosition();
+                if (pos && pos->getBpm())
+                {
+                    double bpm = *pos->getBpm();
+                    if (bpm > 1.0)
+                    {
+                        double noteDivs[] = {0, 1.0/32, 1.0/16, 1.0/8, 1.0/4, 1.0/2, 1.0, 2.0};
+                        double beatSec = 60.0 / bpm;
+                        rate = (float)(1.0 / (beatSec * noteDivs[syncIdx]));
+                    }
+                }
+            }
+        };
+        syncRate(ParamID::lfo1Sync, p1.rate);
+        syncRate(ParamID::lfo2Sync, p2.rate);
+        syncRate(ParamID::lfo3Sync, p3.rate);
+        syncRate(ParamID::lfo4Sync, p4.rate);
+
+        lfo.setLfo1Params(p1);
+        lfo.setLfo2Params(p2);
+        lfo.setLfo3Params(p3);
+        lfo.setLfo4Params(p4);
     }
 
     // Capture buffer size + BPM sync
@@ -178,14 +212,26 @@ void ArxybinAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce:
     lfoModDisplay[8] = lfoMod.stutLenMod;
     lfoModDisplay[9] = lfoMod.shufAmtMod;
     lfoModDisplay[10]= lfoMod.shufSzMod;
+    lfoModDisplay[11]= lfoMod.dryWetMod;
+    lfoModDisplay[12]= lfoMod.inGainMod;
+    lfoModDisplay[13]= lfoMod.outGainMod;
+    lfoModDisplay[14]= lfoMod.distMixMod;
+    lfoModDisplay[15]= lfoMod.bitMixMod;
+    lfoModDisplay[16]= lfoMod.stutMixMod;
+    lfoModDisplay[17]= lfoMod.shfMixMod;
 
     lfo1TargetIdx = static_cast<int>(lfo.getLfo1Params().target);
     lfo2TargetIdx = static_cast<int>(lfo.getLfo2Params().target);
     lfo3TargetIdx = static_cast<int>(lfo.getLfo3Params().target);
+    lfo4TargetIdx = static_cast<int>(lfo.getLfo4Params().target);
 
-    const float inputDb  = arxybin::getRawParam(apvts, arxybin::ParamID::inputGain);
-    const float outputDb = arxybin::getRawParam(apvts, arxybin::ParamID::outputGain);
-    const float dryWet   = arxybin::getRawParam(apvts, arxybin::ParamID::dryWet) * 0.01f;
+    const float inputDb  = arxybin::getRawParam(apvts, arxybin::ParamID::inputGain)
+                            + lfoMod.inGainMod;
+    const float outputDb = arxybin::getRawParam(apvts, arxybin::ParamID::outputGain)
+                            + lfoMod.outGainMod;
+    float dryWet = arxybin::getRawParam(apvts, arxybin::ParamID::dryWet) * 0.01f
+                   + lfoMod.dryWetMod;
+    dryWet = juce::jlimit(0.0f, 1.0f, dryWet);
 
     const float inGain  = juce::Decibels::decibelsToGain(inputDb);
     const float outGain = juce::Decibels::decibelsToGain(outputDb);
@@ -217,10 +263,14 @@ void ArxybinAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce:
     granularEngine.processBlock(wet, grainOut);
 
     // === Glitch chain — each effect with individual dry/wet ===
-    const float distMix    = arxybin::getRawParam(apvts, arxybin::ParamID::distMix)    * 0.01f;
-    const float bitMix     = arxybin::getRawParam(apvts, arxybin::ParamID::bitMix)     * 0.01f;
-    const float stutterMix = arxybin::getRawParam(apvts, arxybin::ParamID::stutterMix) * 0.01f;
-    const float shuffleMix = arxybin::getRawParam(apvts, arxybin::ParamID::shuffleMix) * 0.01f;
+    float distMix    = arxybin::getRawParam(apvts, arxybin::ParamID::distMix)    * 0.01f + lfoMod.distMixMod;
+    float bitMix     = arxybin::getRawParam(apvts, arxybin::ParamID::bitMix)     * 0.01f + lfoMod.bitMixMod;
+    float stutterMix = arxybin::getRawParam(apvts, arxybin::ParamID::stutterMix) * 0.01f + lfoMod.stutMixMod;
+    float shuffleMix = arxybin::getRawParam(apvts, arxybin::ParamID::shuffleMix) * 0.01f + lfoMod.shfMixMod;
+    distMix = juce::jlimit(0.0f, 1.0f, distMix);
+    bitMix  = juce::jlimit(0.0f, 1.0f, bitMix);
+    stutterMix = juce::jlimit(0.0f, 1.0f, stutterMix);
+    shuffleMix = juce::jlimit(0.0f, 1.0f, shuffleMix);
 
     // Helper: apply effect with dry/wet blend
     auto applyWithMix = [&](auto& effect, float mix) {

@@ -77,13 +77,14 @@ float LfoEngine::modulate(float base, float range) const
 }
 
 // ==============================================================================
-// Dual LFO
+// Quad LFO
 // ==============================================================================
 void DualLfo::prepare(double sampleRate)
 {
     lfo1.prepare(sampleRate);
     lfo2.prepare(sampleRate);
     lfo3.prepare(sampleRate);
+    lfo4.prepare(sampleRate);
 }
 
 void DualLfo::reset()
@@ -91,6 +92,7 @@ void DualLfo::reset()
     lfo1.reset();
     lfo2.reset();
     lfo3.reset();
+    lfo4.reset();
 }
 
 DualLfo::ModValues DualLfo::process()
@@ -99,50 +101,40 @@ DualLfo::ModValues DualLfo::process()
     const float m1 = lfo1.process();
     const float m2 = lfo2.process();
     const float m3 = lfo3.process();
+    const float m4 = lfo4.process();
 
     auto apply = [&](LfoTarget t, float mod, float& out, LfoTarget match, float scale) {
         if (t == match) out += mod * scale;
     };
 
     #define APPLY(tgt, mod, field, targetEnum, scale) apply(tgt, mod, mv.field, LfoTarget::targetEnum, scale)
+    #define APPLY_LFO(lfoTgt, modVal) \
+        APPLY(lfoTgt, modVal, pitchMod,    GrainPitch,    24.0f); \
+        APPLY(lfoTgt, modVal, positionMod, GrainPosition, 0.5f); \
+        APPLY(lfoTgt, modVal, panMod,      GrainPan,      1.0f); \
+        APPLY(lfoTgt, modVal, sizeMod,     GrainSize,     0.8f); \
+        APPLY(lfoTgt, modVal, densityMod,  GrainDensity,  0.5f); \
+        APPLY(lfoTgt, modVal, distMod,     DistDrive,     1.0f); \
+        APPLY(lfoTgt, modVal, bitMod,      BitDepth,      1.0f); \
+        APPLY(lfoTgt, modVal, stutProbMod, StutterProb,   1.0f); \
+        APPLY(lfoTgt, modVal, stutLenMod,  StutterLen,    1.0f); \
+        APPLY(lfoTgt, modVal, shufAmtMod,  ShuffleAmt,    1.0f); \
+        APPLY(lfoTgt, modVal, shufSzMod,   ShuffleSize,   1.0f); \
+        APPLY(lfoTgt, modVal, dryWetMod,   DryWet,        1.0f); \
+        APPLY(lfoTgt, modVal, inGainMod,   InGain,        24.0f); \
+        APPLY(lfoTgt, modVal, outGainMod,  OutGain,       24.0f); \
+        APPLY(lfoTgt, modVal, distMixMod,  DistMix,       1.0f); \
+        APPLY(lfoTgt, modVal, bitMixMod,   BitMix,        1.0f); \
+        APPLY(lfoTgt, modVal, stutMixMod,  StutterMix,    1.0f); \
+        APPLY(lfoTgt, modVal, shfMixMod,   ShuffleMix,    1.0f);
 
-    APPLY(lfo1Params.target, m1, pitchMod,    GrainPitch,    24.0f);
-    APPLY(lfo1Params.target, m1, positionMod, GrainPosition, 0.5f);
-    APPLY(lfo1Params.target, m1, panMod,      GrainPan,      1.0f);
-    APPLY(lfo1Params.target, m1, sizeMod,     GrainSize,     0.8f);
-    APPLY(lfo1Params.target, m1, densityMod,  GrainDensity,  0.5f);
-    APPLY(lfo1Params.target, m1, distMod,     DistDrive,     1.0f);
-    APPLY(lfo1Params.target, m1, bitMod,      BitDepth,      1.0f);
-    APPLY(lfo1Params.target, m1, stutProbMod, StutterProb,   1.0f);
-    APPLY(lfo1Params.target, m1, stutLenMod,  StutterLen,    1.0f);
-    APPLY(lfo1Params.target, m1, shufAmtMod,  ShuffleAmt,    1.0f);
-    APPLY(lfo1Params.target, m1, shufSzMod,   ShuffleSize,   1.0f);
-
-    APPLY(lfo2Params.target, m2, pitchMod,    GrainPitch,    24.0f);
-    APPLY(lfo2Params.target, m2, positionMod, GrainPosition, 0.5f);
-    APPLY(lfo2Params.target, m2, panMod,      GrainPan,      1.0f);
-    APPLY(lfo2Params.target, m2, sizeMod,     GrainSize,     0.8f);
-    APPLY(lfo2Params.target, m2, densityMod,  GrainDensity,  0.5f);
-    APPLY(lfo2Params.target, m2, distMod,     DistDrive,     1.0f);
-    APPLY(lfo2Params.target, m2, bitMod,      BitDepth,      1.0f);
-    APPLY(lfo2Params.target, m2, stutProbMod, StutterProb,   1.0f);
-    APPLY(lfo2Params.target, m2, stutLenMod,  StutterLen,    1.0f);
-    APPLY(lfo2Params.target, m2, shufAmtMod,  ShuffleAmt,    1.0f);
-    APPLY(lfo2Params.target, m2, shufSzMod,   ShuffleSize,   1.0f);
-
-    APPLY(lfo3Params.target, m3, pitchMod,    GrainPitch,    24.0f);
-    APPLY(lfo3Params.target, m3, positionMod, GrainPosition, 0.5f);
-    APPLY(lfo3Params.target, m3, panMod,      GrainPan,      1.0f);
-    APPLY(lfo3Params.target, m3, sizeMod,     GrainSize,     0.8f);
-    APPLY(lfo3Params.target, m3, densityMod,  GrainDensity,  0.5f);
-    APPLY(lfo3Params.target, m3, distMod,     DistDrive,     1.0f);
-    APPLY(lfo3Params.target, m3, bitMod,      BitDepth,      1.0f);
-    APPLY(lfo3Params.target, m3, stutProbMod, StutterProb,   1.0f);
-    APPLY(lfo3Params.target, m3, stutLenMod,  StutterLen,    1.0f);
-    APPLY(lfo3Params.target, m3, shufAmtMod,  ShuffleAmt,    1.0f);
-    APPLY(lfo3Params.target, m3, shufSzMod,   ShuffleSize,   1.0f);
+    APPLY_LFO(lfo1Params.target, m1)
+    APPLY_LFO(lfo2Params.target, m2)
+    APPLY_LFO(lfo3Params.target, m3)
+    APPLY_LFO(lfo4Params.target, m4)
 
     #undef APPLY
+    #undef APPLY_LFO
 
     return mv;
 }

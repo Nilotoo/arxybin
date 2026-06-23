@@ -223,6 +223,14 @@ void ArxybinAudioProcessorEditor::MixLabel::paint(juce::Graphics& g)
         g.setColour(juce::Colour(0x0C000000));
         g.fillRoundedRectangle(b, 4.0f);
     }
+    // LFO modulation green line at top
+    if (std::abs(lfoMod) > 0.001f)
+    {
+        float offset = lfoMod * b.getWidth() * 0.5f;
+        g.setColour(juce::Colour(0xFF4A8C5C).withAlpha(0.7f));
+        g.fillRect(b.getCentreX() + offset - 0.5f, b.getY(), 1.5f, 3.0f);
+    }
+
     g.setColour(darkTx);
     g.setFont(juce::Font { juce::FontOptions {}.withPointHeight(12.0f).withStyle("Bold") });
     g.drawText(getText(), getLocalBounds(), juce::Justification::centred);
@@ -755,7 +763,7 @@ void ArxybinAudioProcessorEditor::timerCallback()
     static int tick=0;
     if(++tick>=80){tick=0;proc.selfBackup=proc.apvts.copyState();}
 
-    // Push LFO mod values to knobs (non-zero mod = green line appears)
+    // Push LFO mod values to knobs
     {
         static int lfoTick=0;
         if(++lfoTick>=3){lfoTick=0;
@@ -773,10 +781,35 @@ void ArxybinAudioProcessorEditor::timerCallback()
                     if(w->paramID=="stutterLength") {mod=proc.lfoModDisplay[8]; scale=1.0f;}
                     if(w->paramID=="shuffleAmount") {mod=proc.lfoModDisplay[9]; scale=1.0f;}
                     if(w->paramID=="shuffleSegment"){mod=proc.lfoModDisplay[10];scale=1.0f;}
+                    if(w->paramID=="dryWet")        {mod=proc.lfoModDisplay[11];scale=1.0f;}
+                    if(w->paramID=="inputGain")     {mod=proc.lfoModDisplay[12];scale=24.0f;}
+                    if(w->paramID=="outputGain")    {mod=proc.lfoModDisplay[13];scale=24.0f;}
+                    if(w->paramID=="distMix")       {mod=proc.lfoModDisplay[14];scale=1.0f;}
+                    if(w->paramID=="bitMix")        {mod=proc.lfoModDisplay[15];scale=1.0f;}
+                    if(w->paramID=="stutterMix")    {mod=proc.lfoModDisplay[16];scale=1.0f;}
+                    if(w->paramID=="shuffleMix")    {mod=proc.lfoModDisplay[17];scale=1.0f;}
                     w->knob->setLfoMod(mod / juce::jmax(0.01f, scale));
                     w->knob->repaint();
                 }
             }
+        }
+    }
+
+    // Sync knob arcs from APVTS (for DAW automation)
+    {
+        static int syncTick=0;
+        if(++syncTick>=6){syncTick=0;
+            syncKnobsFromAPVTS();
+            mixDryWet.updateDisplay();
+            mixInput.updateDisplay();
+            mixOutput.updateDisplay();
+            // Set LFO mod on mix labels
+            mixDryWet.setLfoMod(proc.lfoModDisplay[11]);
+            mixInput.setLfoMod(proc.lfoModDisplay[12] / 24.0f);
+            mixOutput.setLfoMod(proc.lfoModDisplay[13] / 24.0f);
+            mixDryWet.repaint();
+            mixInput.repaint();
+            mixOutput.repaint();
         }
     }
 

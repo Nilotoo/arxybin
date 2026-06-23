@@ -51,12 +51,15 @@ private:
     ModKnob lfo1Rate{"lfo1Rate",apvts}, lfo1Depth{"lfo1Depth",apvts};
     ModKnob lfo2Rate{"lfo2Rate",apvts}, lfo2Depth{"lfo2Depth",apvts};
     ModKnob lfo3Rate{"lfo3Rate",apvts}, lfo3Depth{"lfo3Depth",apvts};
-    juce::ComboBox lfo1Target, lfo1Wave, lfo2Target, lfo2Wave, lfo3Target, lfo3Wave;
+    ModKnob lfo4Rate{"lfo4Rate",apvts}, lfo4Depth{"lfo4Depth",apvts};
+    juce::ComboBox lfo1Target, lfo1Wave, lfo2Target, lfo2Wave;
+    juce::ComboBox lfo3Target, lfo3Wave, lfo4Target, lfo4Wave;
     juce::Label lfo1RateLbl, lfo1DepthLbl, lfo1TargetLbl, lfo1WaveLbl;
     juce::Label lfo2RateLbl, lfo2DepthLbl, lfo2TargetLbl, lfo2WaveLbl;
     juce::Label lfo3RateLbl, lfo3DepthLbl, lfo3TargetLbl, lfo3WaveLbl;
+    juce::Label lfo4RateLbl, lfo4DepthLbl, lfo4TargetLbl, lfo4WaveLbl;
 
-    float lfo1Phase = 0, lfo2Phase = 0, lfo3Phase = 0;
+    float lfo1Phase = 0, lfo2Phase = 0, lfo3Phase = 0, lfo4Phase = 0;
 };
 
 juce::DialogWindow* createModWindow(juce::AudioProcessorValueTreeState& apvts);

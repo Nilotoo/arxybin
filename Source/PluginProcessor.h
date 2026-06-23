@@ -55,14 +55,15 @@ public:
     int getLfo1Target() const { return lfo1TargetIdx; }
     int getLfo2Target() const { return lfo2TargetIdx; }
     int getLfo3Target() const { return lfo3TargetIdx; }
+    int getLfo4Target() const { return lfo4TargetIdx; }
 
     // --- Preset access (for UI) ----------------------------------------------
     arxybin::PresetManager& getPresetManager() { return presetManager; }
     const arxybin::PresetManager& getPresetManager() const { return presetManager; }
 
     // --- LFO modulation values + active targets (for UI green indicators) ----
-    float lfoModDisplay[12] = {};
-    int   lfo1TargetIdx = 0, lfo2TargetIdx = 0, lfo3TargetIdx = 0;
+    float lfoModDisplay[19] = {};
+    int   lfo1TargetIdx = 0, lfo2TargetIdx = 0, lfo3TargetIdx = 0, lfo4TargetIdx = 0;
 
     // --- Waveform snapshots (for UI) -----------------------------------------
     const float* getDryWave() const { return drySnapshot; }

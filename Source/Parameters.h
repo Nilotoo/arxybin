@@ -67,6 +67,14 @@ namespace ParamID
     DECLARE_ID(lfo3Rate);       DECLARE_ID(lfo3Depth);
     DECLARE_ID(lfo3Target);     DECLARE_ID(lfo3Wave);
 
+    // LFO4 (4)
+    DECLARE_ID(lfo4Rate);       DECLARE_ID(lfo4Depth);
+    DECLARE_ID(lfo4Target);     DECLARE_ID(lfo4Wave);
+
+    // LFO Sync (4)
+    DECLARE_ID(lfo1Sync);       DECLARE_ID(lfo2Sync);
+    DECLARE_ID(lfo3Sync);       DECLARE_ID(lfo4Sync);
+
     #undef DECLARE_ID
 }
 
@@ -160,29 +168,24 @@ inline juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout
     // ======================== LFO1 (4) =========================================
     fp(ParamID::lfo1Rate,     "LFO1 Rate",     0.01f, 1000, 0.01f, 1);
     fp(ParamID::lfo1Depth,    "LFO1 Depth",    0,     100,  1,     0);
-    ch(ParamID::lfo1Target,   "LFO1 Target",
-       juce::StringArray{"Off","Pitch","Pos","Pan","Size","Density",
-                         "DistDrv","BitDepth","Stut%","StutLen","ShfAmt","ShfSz"}, 0);
-    ch(ParamID::lfo1Wave,     "LFO1 Wave",
-       juce::StringArray{"Sine","Triangle","Saw","Square","S&H"}, 0);
+    auto lfoTargets = juce::StringArray{"Off","Pitch","Pos","Pan","Size","Density",
+        "DistDrv","BitDepth","Stut%","StutLen","ShfAmt","ShfSz",
+        "DryWet","InGain","OutGain","DistMix","BitMix","StutMix","ShfMix"};
+    auto lfoWaves   = juce::StringArray{"Sine","Triangle","Saw","Square","S&H"};
+    auto lfoSyncs   = juce::StringArray{"Off","1/32","1/16","1/8","1/4","1/2","1 bar","2 bar"};
 
-    // ======================== LFO2 (4) =========================================
-    fp(ParamID::lfo2Rate,     "LFO2 Rate",     0.01f, 1000, 0.01f, 1);
-    fp(ParamID::lfo2Depth,    "LFO2 Depth",    0,     100,  1,     0);
-    ch(ParamID::lfo2Target,   "LFO2 Target",
-       juce::StringArray{"Off","Pitch","Pos","Pan","Size","Density",
-                         "DistDrv","BitDepth","Stut%","StutLen","ShfAmt","ShfSz"}, 0);
-    ch(ParamID::lfo2Wave,     "LFO2 Wave",
-       juce::StringArray{"Sine","Triangle","Saw","Square","S&H"}, 0);
+    #define LFO_GROUP(id, name) \
+        fp(ParamID::id##Rate,     name " Rate",  0.01f, 1000, 0.01f, 1); \
+        fp(ParamID::id##Depth,    name " Depth", 0,     100,  1,     0); \
+        ch(ParamID::id##Target,   name " Target", lfoTargets, 0); \
+        ch(ParamID::id##Wave,     name " Wave",   lfoWaves,   0); \
+        ch(ParamID::id##Sync,     name " Sync",   lfoSyncs,   0)
 
-    // ======================== LFO3 (4) =========================================
-    fp(ParamID::lfo3Rate,     "LFO3 Rate",     0.01f, 1000, 0.01f, 1);
-    fp(ParamID::lfo3Depth,    "LFO3 Depth",    0,     100,  1,     0);
-    ch(ParamID::lfo3Target,   "LFO3 Target",
-       juce::StringArray{"Off","Pitch","Pos","Pan","Size","Density",
-                         "DistDrv","BitDepth","Stut%","StutLen","ShfAmt","ShfSz"}, 0);
-    ch(ParamID::lfo3Wave,     "LFO3 Wave",
-       juce::StringArray{"Sine","Triangle","Saw","Square","S&H"}, 0);
+    LFO_GROUP(lfo1, "LFO1");
+    LFO_GROUP(lfo2, "LFO2");
+    LFO_GROUP(lfo3, "LFO3");
+    LFO_GROUP(lfo4, "LFO4");
+    #undef LFO_GROUP
 
     return lay;
 }

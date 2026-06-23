@@ -105,8 +105,13 @@ ModWindowContent::ModWindowContent(juce::AudioProcessorValueTreeState& a) : apvt
     addAndMakeVisible(lfo3Depth); addKLbl(lfo3DepthLbl, "Depth");
     setupCb(lfo3Target, "lfo3Target", lfo3TargetLbl, "Target");
     setupCb(lfo3Wave, "lfo3Wave", lfo3WaveLbl, "Wave");
+    // LFO4
+    addAndMakeVisible(lfo4Rate); addKLbl(lfo4RateLbl, "Rate");
+    addAndMakeVisible(lfo4Depth); addKLbl(lfo4DepthLbl, "Depth");
+    setupCb(lfo4Target, "lfo4Target", lfo4TargetLbl, "Target");
+    setupCb(lfo4Wave, "lfo4Wave", lfo4WaveLbl, "Wave");
 
-    setSize(510, 530);
+    setSize(510, 700);
     startTimerHz(40);
 }
 ModWindowContent::~ModWindowContent() { stopTimer(); }
@@ -120,6 +125,9 @@ void ModWindowContent::timerCallback()
     lfo1Phase+=0.005f+r1*0.15f; if(lfo1Phase>1.0f)lfo1Phase-=1.0f;
     lfo2Phase+=0.005f+r2*0.15f; if(lfo2Phase>1.0f)lfo2Phase-=1.0f;
     lfo3Phase+=0.005f+r3*0.15f; if(lfo3Phase>1.0f)lfo3Phase-=1.0f;
+    float r4=0;
+    if(auto* p=apvts.getParameter("lfo4Rate"))r4=p->getValue();
+    lfo4Phase+=0.005f+r4*0.15f; if(lfo4Phase>1.0f)lfo4Phase-=1.0f;
     repaint();
 }
 
@@ -173,9 +181,14 @@ void ModWindowContent::paint(juce::Graphics& g)
     drawLfoPreview(g,{8,298,getWidth()-16,wfH},lfo2Wave.getSelectedItemIndex(),lfo2Phase);
     g.setColour(divLine); g.drawHorizontalLine(356,12,getWidth()-12);
 
-    // LFO3: header(362) → controls(378) → waveform(478)
+    // LFO3: header(362) → controls(378) → waveform(478) → separator(536)
     g.drawText("LFO 3",12,362,200,18,juce::Justification::left);
     drawLfoPreview(g,{8,478,getWidth()-16,wfH},lfo3Wave.getSelectedItemIndex(),lfo3Phase);
+    g.setColour(divLine); g.drawHorizontalLine(536,12,getWidth()-12);
+
+    // LFO4: header(542) → controls(558) → waveform(658)
+    g.drawText("LFO 4",12,542,200,18,juce::Justification::left);
+    drawLfoPreview(g,{8,658,getWidth()-16,wfH},lfo4Wave.getSelectedItemIndex(),lfo4Phase);
 }
 
 void ModWindowContent::resized()
@@ -191,6 +204,7 @@ void ModWindowContent::resized()
     lay(18,  lfo1Rate,lfo1Depth,lfo1RateLbl,lfo1DepthLbl,lfo1Target,lfo1Wave,lfo1TargetLbl,lfo1WaveLbl);
     lay(198, lfo2Rate,lfo2Depth,lfo2RateLbl,lfo2DepthLbl,lfo2Target,lfo2Wave,lfo2TargetLbl,lfo2WaveLbl);
     lay(378, lfo3Rate,lfo3Depth,lfo3RateLbl,lfo3DepthLbl,lfo3Target,lfo3Wave,lfo3TargetLbl,lfo3WaveLbl);
+    lay(558, lfo4Rate,lfo4Depth,lfo4RateLbl,lfo4DepthLbl,lfo4Target,lfo4Wave,lfo4TargetLbl,lfo4WaveLbl);
 }
 
 juce::DialogWindow* createModWindow(juce::AudioProcessorValueTreeState& apvts)
