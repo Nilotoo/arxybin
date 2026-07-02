@@ -24,6 +24,10 @@ public:
     void setDensity(int g)            { density = g; }
     void setPitch(float s)            { pitchSemis = s; }
     void setPitchRandom(float p)      { pitchRandomPct = p * 0.01f; }
+    void setPitchChroma(int c)        { pitchChroma = c; }
+    void setPitchRandomSync(int s)    { pitchRandSyncIdx = s; }
+    void setPitchSyncRate(float r)    { pitchSyncRate = r; }
+    void setPitchSyncInterval(int i)  { pitchSyncInterval = juce::jmax(1, i); }
     void setPanSpread(float p)        { panSpreadPct = p * 0.01f; }
     void setPanRandom(bool r)         { panRandom = r; }
     void setReverseProb(float p)      { reverseProbPct = p * 0.01f; }
@@ -78,6 +82,11 @@ private:
     float lfoPitchMod = 0, lfoPosMod = 0, lfoPanMod = 0;
     float lfoSizeMod = 0, lfoDensMod = 0;
     double scanPhase = 0;
+
+    // Pitch random chroma + sync
+    int   pitchChroma = 0, pitchRandSyncIdx = 0;
+    float pitchSyncRate = 0, lastPitchRand = 0;
+    int   pitchSyncCounter = 0, pitchSyncInterval = 0;
 
     float semitonesToRatio(float s) const { return std::pow(2.0f, s / 12.0f); }
     void spawnGrain();

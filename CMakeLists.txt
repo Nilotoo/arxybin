@@ -12,7 +12,7 @@ if(MSVC)
     set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 endif()
 
-project(arxybin VERSION 1.0.0 LANGUAGES C CXX)
+project(arxybin VERSION 1.0.2 LANGUAGES C CXX)
 
 # --- JUCE setup ----------------------------------------------------------------
 # JUCE_PATH can be overridden three ways (first wins):

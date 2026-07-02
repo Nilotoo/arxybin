@@ -93,6 +93,15 @@ void GranularEngine::processBlock(const juce::AudioBuffer<float>& input,
         ringPos = (ringPos + 1) % ringSz;
         scanPhase += scanDelta;
         if (scanPhase >= 1.0) scanPhase -= std::floor(scanPhase);
+
+        // Pitch random sync counter
+        if (pitchSyncInterval > 0) {
+            ++pitchSyncCounter;
+            if (pitchSyncCounter >= pitchSyncInterval) {
+                pitchSyncCounter = 0;
+                lastPitchRand = juce::Random::getSystemRandom().nextFloat();
+            }
+        }
     }
 }
 
@@ -106,7 +115,32 @@ void GranularEngine::spawnGrain()
     size = juce::jlimit(1.0f, 500.0f, size);
 
     // Pitch
-    float randPitch = pitchRandomPct > 0 ? (rng.nextFloat() * 2 - 1) * pitchRandomPct * 24 : 0;
+    float randPitch = 0;
+    if (pitchRandomPct > 0) {
+        float r = (pitchSyncInterval > 0) ? lastPitchRand : rng.nextFloat();
+        randPitch = (r * 2.0f - 1.0f) * pitchRandomPct * 24.0f;
+        // Chroma mode: snap to chromatic intervals
+        if (pitchChroma > 0) {
+            int chromaSemis[] = {0, 3, 5, 7, 12}; // Off, 3rd(+/-3), 5th(+/-4or5), ...wait
+            // Actually: Off=0, 3rd=1 (snap to ±3 or ±4), 5th=2 (snap to ±5 or ±7), Octave=3 (snap to ±12)
+            int intervals_3rd[] = {0, 3, 4, -3, -4};
+            int intervals_5th[] = {0, 5, 7, -5, -7};
+            int intervals_oct[] = {0, 12, -12};
+            int* target = nullptr; int count = 0;
+            if (pitchChroma == 1) { target = intervals_3rd; count = 5; }
+            else if (pitchChroma == 2) { target = intervals_5th; count = 5; }
+            else if (pitchChroma == 3) { target = intervals_oct; count = 3; }
+            if (target && count > 0) {
+                // Find nearest interval
+                float nearest = 0; float bestDist = 999;
+                for (int i = 0; i < count; ++i) {
+                    float dist = std::abs(randPitch - (float)target[i]);
+                    if (dist < bestDist) { bestDist = dist; nearest = (float)target[i]; }
+                }
+                randPitch = nearest;
+            }
+        }
+    }
     float pitch = pitchSemis + randPitch + lfoPitchMod;
     float ratio = semitonesToRatio(pitch);
 

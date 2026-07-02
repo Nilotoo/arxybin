@@ -489,6 +489,7 @@ void ArxybinAudioProcessorEditor::buildParamControls()
     const std::vector<PD> defs = {
         {"grainSize","Sz",0,0},{"grainDensity","Dens",0,0},
         {"grainPitch","Pitch",0,0},{"pitchRandom","PtRnd",0,0},
+        {"pitchChroma","Chroma",2,0},{"pitchRandomSync","PtSync",2,0},
         {"panSpread","Pan",0,0},{"reverseProb","Rev",0,0},
         {"grainFeedback","Fbk",0,0},
         {"grainRandom","SzRnd",3,0},{"panRandom","PanRnd",3,0},
@@ -877,7 +878,7 @@ void ArxybinAudioProcessorEditor::showModWindow()
 }
 void ArxybinAudioProcessorEditor::showSettingsMenu()
 {
-    juce::PopupMenu m;m.addSectionHeader("arxybin.  v1.0.0");m.addSeparator();
+    juce::PopupMenu m;m.addSectionHeader("arxybin.  v1.0.2");m.addSeparator();
     m.addItem("Creator : nilotoo.",false,false,nullptr);
     m.addItem("sound designer / sound artist",false,false,nullptr);m.addSeparator();
     m.addItem("Granular + Glitch Effect",false,false,nullptr);

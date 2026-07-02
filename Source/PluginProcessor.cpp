@@ -68,6 +68,26 @@ void ArxybinAudioProcessor::readParams()
     granularEngine.setDensity(static_cast<int>(gp(ParamID::grainDensity)));
     granularEngine.setPitch(gp(ParamID::grainPitch));
     granularEngine.setPitchRandom(gp(ParamID::pitchRandom));
+    granularEngine.setPitchChroma(static_cast<int>(gp(ParamID::pitchChroma)));
+    granularEngine.setPitchRandomSync(static_cast<int>(gp(ParamID::pitchRandomSync)));
+    // Compute pitch sync interval from BPM
+    {
+        int sIdx = static_cast<int>(gp(ParamID::pitchRandomSync));
+        if (sIdx > 0 && getPlayHead()) {
+            auto pos = getPlayHead()->getPosition();
+            if (pos && pos->getBpm()) {
+                double bpm = *pos->getBpm();
+                if (bpm > 1.0) {
+                    double noteDivs[] = {0, 1.0/32, 1.0/16, 1.0/8, 1.0/4, 1.0/2, 1.0, 2.0};
+                    double syncSec = (60.0 / bpm) * noteDivs[sIdx];
+                    float sr = (float)getSampleRate();
+                    granularEngine.setPitchSyncRate((float)syncSec);
+                    // set pitchSyncInterval in engine — need to prepare()
+                    granularEngine.setPitchSyncInterval((int)(syncSec * sr));
+                }
+            }
+        }
+    }
     granularEngine.setPanSpread(gp(ParamID::panSpread));
     granularEngine.setPanRandom(gp(ParamID::panRandom) > 0.5f);
     granularEngine.setReverseProb(gp(ParamID::reverseProb));
@@ -136,8 +156,8 @@ void ArxybinAudioProcessor::readParams()
         p4.wave  = static_cast<arxybin::LfoWaveform>(static_cast<int>(gp(ParamID::lfo4Wave)));
         p4.target= static_cast<arxybin::LfoTarget>(static_cast<int>(gp(ParamID::lfo4Target)));
 
-        // LFO BPM Sync
-        auto syncRate = [&](const juce::String& syncId, float& rate) {
+        // LFO BPM Sync — override rate and write back to APVTS so knob reflects it
+        auto syncRate = [&](const juce::String& syncId, const juce::String& rateId, float& rate) {
             int syncIdx = static_cast<int>(gp(syncId));
             if (syncIdx > 0 && getPlayHead())
             {
@@ -150,14 +170,20 @@ void ArxybinAudioProcessor::readParams()
                         double noteDivs[] = {0, 1.0/32, 1.0/16, 1.0/8, 1.0/4, 1.0/2, 1.0, 2.0};
                         double beatSec = 60.0 / bpm;
                         rate = (float)(1.0 / (beatSec * noteDivs[syncIdx]));
+                        // Snap knob display
+                        if (auto* p = apvts.getParameter(rateId))
+                        {
+                            float norm = juce::jlimit(0.0f, 1.0f, (rate - 0.01f) / (1000.0f - 0.01f));
+                            p->setValueNotifyingHost(norm);
+                        }
                     }
                 }
             }
         };
-        syncRate(ParamID::lfo1Sync, p1.rate);
-        syncRate(ParamID::lfo2Sync, p2.rate);
-        syncRate(ParamID::lfo3Sync, p3.rate);
-        syncRate(ParamID::lfo4Sync, p4.rate);
+        syncRate(ParamID::lfo1Sync, ParamID::lfo1Rate, p1.rate);
+        syncRate(ParamID::lfo2Sync, ParamID::lfo2Rate, p2.rate);
+        syncRate(ParamID::lfo3Sync, ParamID::lfo3Rate, p3.rate);
+        syncRate(ParamID::lfo4Sync, ParamID::lfo4Rate, p4.rate);
 
         lfo.setLfo1Params(p1);
         lfo.setLfo2Params(p2);

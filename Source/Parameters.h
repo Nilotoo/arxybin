@@ -17,7 +17,8 @@ namespace ParamID
     // Grains (10)
     DECLARE_ID(grainSize);      DECLARE_ID(grainRandom);
     DECLARE_ID(grainDensity);   DECLARE_ID(grainPitch);
-    DECLARE_ID(pitchRandom);    DECLARE_ID(panSpread);
+    DECLARE_ID(pitchRandom);    DECLARE_ID(pitchChroma);
+    DECLARE_ID(pitchRandomSync); DECLARE_ID(panSpread);
     DECLARE_ID(panRandom);      DECLARE_ID(reverseProb);
     DECLARE_ID(grainFeedback);
 
@@ -106,6 +107,10 @@ inline juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout
     in(ParamID::grainDensity, "Density",       1,  100, 10);
     fp(ParamID::grainPitch,   "Pitch",        -24, 24,  1,    0);
     fp(ParamID::pitchRandom,  "Pitch Random",  0,  100, 1,    0);
+    ch(ParamID::pitchChroma,  "Chromatize",
+       juce::StringArray{"Off","3rd","5th","Octave"}, 0);
+    ch(ParamID::pitchRandomSync,"PitchRandSync",
+       juce::StringArray{"Off","1/32","1/16","1/8","1/4","1/2","1 bar","2 bar"}, 0);
     fp(ParamID::panSpread,    "Pan Spread",    0,  100, 1,   80);
     bo(ParamID::panRandom,    "Pan Random",    false);
     fp(ParamID::reverseProb,  "Reverse",       0,  100, 1,   20);
